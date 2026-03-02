@@ -14,9 +14,47 @@ export default function RegistroPage() {
   const [telefono, setTelefono] = useState("");
   const [direccion, setDireccion] = useState("");
 
-  const handleContinuar = (e: React.FormEvent) => {
+  const [enviando, setEnviando] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleContinuar = async (e: React.FormEvent) => {
     e.preventDefault();
-    router.push("/menu");
+    
+    if (!nombre || !telefono) {
+      setError("Nombre y teléfono son obligatorios");
+      return;
+    }
+
+    setEnviando(true);
+    setError("");
+
+    try {
+      const res = await fetch("/api/clientes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nombre,
+          telefono,
+          direccion: direccion || undefined,
+        }),
+      });
+
+      if (res.ok) {
+        // Guardar ID del cliente en localStorage para futuras referencias
+        const cliente = await res.json();
+        if (typeof window !== "undefined") {
+          localStorage.setItem("cliente_id", cliente.id);
+        }
+        router.push("/menu");
+      } else {
+        const data = await res.json();
+        setError(data.error || "Error al registrar. Intenta de nuevo.");
+      }
+    } catch (err) {
+      setError("Error de conexión. Intenta de nuevo.");
+    } finally {
+      setEnviando(false);
+    }
   };
 
   return (
@@ -87,10 +125,20 @@ export default function RegistroPage() {
             <BadgePagoSeguro /> {t.registro.sinTarjeta}
           </p>
 
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-3">
+              <p className="text-sm text-red-800">{error}</p>
+            </div>
+          )}
+
           <p className="text-xs text-stone-400">{t.registro.politicaPrivacidad}</p>
 
-          <button type="submit" className="btn-primary w-full py-4">
-            {t.registro.continuarAlMenu}
+          <button
+            type="submit"
+            disabled={enviando}
+            className="btn-primary w-full py-4 disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {enviando ? "Registrando..." : t.registro.continuarAlMenu}
           </button>
         </form>
 
