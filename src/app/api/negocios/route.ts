@@ -19,10 +19,21 @@ export interface NegocioLeadStored extends NegocioLeadPayload {
   creadoEn: string;
 }
 
+// En Vercel (serverless) no podemos escribir archivos persistentes
+// Usamos memoria para producción, archivo para desarrollo local
+const isVercel = process.env.VERCEL === "1";
 const DATA_DIR = path.join(process.cwd(), "data");
 const DATA_FILE = path.join(DATA_DIR, "negocios.json");
 
+// Store en memoria para Vercel
+let memoriaLeads: NegocioLeadStored[] = [];
+
 async function leerLeads(): Promise<NegocioLeadStored[]> {
+  if (isVercel) {
+    return memoriaLeads;
+  }
+  
+  // Desarrollo local: leer del archivo
   try {
     const contenido = await fs.readFile(DATA_FILE, "utf8");
     const parsed = JSON.parse(contenido) as NegocioLeadStored[];
@@ -39,6 +50,12 @@ async function leerLeads(): Promise<NegocioLeadStored[]> {
 }
 
 async function escribirLeads(leads: NegocioLeadStored[]) {
+  if (isVercel) {
+    memoriaLeads = leads;
+    return;
+  }
+  
+  // Desarrollo local: escribir al archivo
   await fs.mkdir(DATA_DIR, { recursive: true });
   await fs.writeFile(DATA_FILE, JSON.stringify(leads, null, 2), "utf8");
 }
