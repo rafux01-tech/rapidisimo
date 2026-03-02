@@ -4,10 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
 import { useLocale } from "@/lib/locale-context";
-import {
-  negociosLeadsAdminMock,
-  pedidosAdminMock,
-} from "@/lib/admin-mock";
+// Removidos los mocks - solo datos reales
 import type { NegocioLeadStored } from "@/app/api/negocios/route";
 
 function getEstadoPedidoLabel(estado: string) {
@@ -81,8 +78,8 @@ export default function AdminPage() {
         if (!cancelado) {
           setNegociosLeads(data);
         }
-      } catch {
-        // Si falla, dejamos solo los mocks en la tabla de ejemplo.
+      } catch (err) {
+        console.error("Error cargando leads:", err);
       } finally {
         if (!cancelado) setCargandoLeads(false);
       }
@@ -115,11 +112,10 @@ export default function AdminPage() {
     return null;
   }
 
-  const pedidosHoy = pedidosAdminMock.length;
-  const montoHoy = pedidosAdminMock.reduce((acc, p) => acc + p.total, 0);
-  const leadsNuevos =
-    negociosLeads.filter((l) => l.estado === "nuevo").length +
-    negociosLeadsAdminMock.filter((l) => l.estado === "nuevo").length;
+  // Pedidos: por ahora 0 hasta que implementemos el sistema de pedidos real
+  const pedidosHoy = 0;
+  const montoHoy = 0;
+  const leadsNuevos = negociosLeads.filter((l) => l.estado === "nuevo").length;
 
   return (
     <div className="min-h-screen flex flex-col bg-stone-50">
@@ -152,7 +148,7 @@ export default function AdminPage() {
           <section className="grid md:grid-cols-3 gap-4">
             <div className="rounded-2xl bg-white border border-stone-200 px-4 py-3">
               <p className="text-xs font-medium text-stone-500">
-                Pedidos de hoy (mock)
+                Pedidos de hoy
               </p>
               <p className="text-2xl font-bold text-stone-900">
                 {pedidosHoy}
@@ -160,7 +156,7 @@ export default function AdminPage() {
             </div>
             <div className="rounded-2xl bg-white border border-stone-200 px-4 py-3">
               <p className="text-xs font-medium text-stone-500">
-                Monto movido hoy (RD$ - mock)
+                Monto movido hoy (RD$)
               </p>
               <p className="text-2xl font-bold text-stone-900">
                 RD${" "}
@@ -182,60 +178,16 @@ export default function AdminPage() {
           <section className="space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold text-stone-900">
-                Pedidos recientes (ejemplo)
+                Pedidos recientes
               </h2>
-              <p className="text-xs text-stone-500">
-                Estos datos son de prueba, solo para que veas cómo se vería el
-                panel.
-              </p>
             </div>
-            <div className="overflow-x-auto rounded-2xl border border-stone-200 bg-white">
-              <table className="min-w-full text-sm">
-                <thead className="bg-stone-50 text-left text-xs uppercase tracking-wide text-stone-500">
-                  <tr>
-                    <th className="px-4 py-2">ID</th>
-                    <th className="px-4 py-2">Cliente</th>
-                    <th className="px-4 py-2">Restaurante</th>
-                    <th className="px-4 py-2">Sector</th>
-                    <th className="px-4 py-2">Total</th>
-                    <th className="px-4 py-2">Estado</th>
-                    <th className="px-4 py-2">Hace</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pedidosAdminMock.map((p) => (
-                    <tr
-                      key={p.id}
-                      className="border-t border-stone-100 hover:bg-stone-50/80"
-                    >
-                      <td className="px-4 py-2 font-mono text-xs text-stone-700">
-                        {p.id}
-                      </td>
-                      <td className="px-4 py-2 text-stone-800">
-                        {p.cliente}
-                      </td>
-                      <td className="px-4 py-2 text-stone-800">
-                        {p.restaurante}
-                      </td>
-                      <td className="px-4 py-2 text-stone-700">
-                        {p.sector}
-                      </td>
-                      <td className="px-4 py-2 text-stone-800">
-                        RD${" "}
-                        {p.total.toLocaleString("es-DO", {
-                          maximumFractionDigits: 0,
-                        })}
-                      </td>
-                      <td className="px-4 py-2 text-stone-700">
-                        {getEstadoPedidoLabel(p.estado)}
-                      </td>
-                      <td className="px-4 py-2 text-stone-500 text-xs">
-                        {p.creadoHaceMin} min
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="rounded-2xl border border-stone-200 bg-white p-8 text-center">
+              <p className="text-stone-600">
+                El sistema de pedidos estará disponible próximamente.
+              </p>
+              <p className="text-sm text-stone-500 mt-2">
+                Los pedidos reales aparecerán aquí cuando los clientes comiencen a hacer pedidos.
+              </p>
             </div>
           </section>
 
@@ -260,21 +212,26 @@ export default function AdminPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {(negociosLeads.length > 0
-                    ? negociosLeads
-                    : negociosLeadsAdminMock
-                  ).map((n) => {
-                    // Manejar ambos tipos: NegocioLeadStored (API) y NegocioLeadAdmin (mock)
-                    const sector = "sector" in n ? n.sector : n.direccion || "N/A";
-                    const creadoHaceHoras =
-                      "creadoHaceHoras" in n
-                        ? n.creadoHaceHoras
-                        : n.creadoEn
-                          ? Math.floor(
-                              (Date.now() - new Date(n.creadoEn).getTime()) /
-                                (1000 * 60 * 60),
-                            )
-                          : 0;
+                  {negociosLeads.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={8}
+                        className="px-4 py-8 text-center text-stone-500"
+                      >
+                        {cargandoLeads
+                          ? "Cargando..."
+                          : "Aún no hay negocios interesados. Los leads aparecerán aquí cuando se registren desde el formulario."}
+                      </td>
+                    </tr>
+                  ) : (
+                    negociosLeads.map((n) => {
+                      const sector = n.direccion || "N/A";
+                      const creadoHaceHoras = n.creadoEn
+                        ? Math.floor(
+                            (Date.now() - new Date(n.creadoEn).getTime()) /
+                              (1000 * 60 * 60),
+                          )
+                        : 0;
 
                     return (
                       <tr
@@ -305,7 +262,8 @@ export default function AdminPage() {
                         </td>
                       </tr>
                     );
-                  })}
+                    })
+                  )}
                 </tbody>
               </table>
             </div>

@@ -65,29 +65,47 @@ export default function MenuPage() {
           <BadgeProteccion /> {t.menu.pedidoConProteccion}
         </p>
 
-        <ul className="space-y-4">
-          {productosFiltrados.map((p) => (
-            <li
-              key={p.id}
-              className="bg-white rounded-xl border border-stone-200 p-4 flex items-center justify-between shadow-sm"
+        {productosFiltrados.length === 0 ? (
+          <div className="bg-white rounded-xl border border-stone-200 p-8 text-center">
+            <p className="text-stone-700 font-medium mb-2">
+              Menú disponible próximamente
+            </p>
+            <p className="text-sm text-stone-600">
+              Estamos trabajando para conectarte con los mejores restaurantes y negocios de tu zona.
+              El menú aparecerá aquí cuando los restaurantes se registren en la plataforma.
+            </p>
+            <Link
+              href="/soy-negocio"
+              className="inline-block mt-4 text-primary hover:underline text-sm font-medium"
             >
-              <div>
-                <h3 className="font-semibold text-stone-900">
-                  {getProductName(p, locale)}
-                </h3>
-                <p className="text-primary font-semibold">
-                  RD$ {p.precio}
-                </p>
-              </div>
-              <button
-                onClick={() => addItem(p)}
-                className="bg-primary text-white px-4 py-2 rounded-lg font-medium text-sm hover:bg-primary-dark"
+              ¿Tienes un negocio? Regístrate aquí →
+            </Link>
+          </div>
+        ) : (
+          <ul className="space-y-4">
+            {productosFiltrados.map((p) => (
+              <li
+                key={p.id}
+                className="bg-white rounded-xl border border-stone-200 p-4 flex items-center justify-between shadow-sm"
               >
-                {t.menu.agregar}
-              </button>
-            </li>
-          ))}
-        </ul>
+                <div>
+                  <h3 className="font-semibold text-stone-900">
+                    {getProductName(p, locale)}
+                  </h3>
+                  <p className="text-primary font-semibold">
+                    RD$ {p.precio}
+                  </p>
+                </div>
+                <button
+                  onClick={() => addItem(p)}
+                  className="bg-primary text-white px-4 py-2 rounded-lg font-medium text-sm hover:bg-primary-dark"
+                >
+                  {t.menu.agregar}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
 
         {totalItems > 0 && (
           <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-stone-200 p-4 shadow-lg">
