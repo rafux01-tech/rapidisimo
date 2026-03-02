@@ -173,16 +173,27 @@ export async function POST(request: Request) {
 
     // Si tenemos Supabase, usar eso
     if (tieneSupabase) {
-      const nuevo = await escribirLeadSupabase({
-        nombreNegocio: body.nombreNegocio,
-        contactoNombre: body.contactoNombre,
-        contactoTelefono: body.contactoTelefono,
-        direccion: body.direccion,
-        tipoNegocio: body.tipoNegocio,
-        horario: body.horario ?? "",
-        estado: "nuevo",
-      });
-      return NextResponse.json(nuevo, { status: 201 });
+      try {
+        const nuevo = await escribirLeadSupabase({
+          nombreNegocio: body.nombreNegocio,
+          contactoNombre: body.contactoNombre,
+          contactoTelefono: body.contactoTelefono,
+          direccion: body.direccion,
+          tipoNegocio: body.tipoNegocio,
+          horario: body.horario ?? "",
+          estado: "nuevo",
+        });
+        return NextResponse.json(nuevo, { status: 201 });
+      } catch (supabaseError: any) {
+        console.error("Error de Supabase:", supabaseError);
+        return NextResponse.json(
+          {
+            error: "Error al guardar en Supabase",
+            detalles: supabaseError?.message || "Error desconocido",
+          },
+          { status: 500 },
+        );
+      }
     }
 
     // Fallback: usar archivo o memoria

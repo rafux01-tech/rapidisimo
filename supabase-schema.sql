@@ -30,7 +30,8 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
--- Trigger para actualizar actualizado_en
+-- Trigger para actualizar actualizado_en (eliminar si existe primero)
+DROP TRIGGER IF EXISTS update_negocios_leads_updated_at ON negocios_leads;
 CREATE TRIGGER update_negocios_leads_updated_at
   BEFORE UPDATE ON negocios_leads
   FOR EACH ROW
@@ -40,12 +41,14 @@ CREATE TRIGGER update_negocios_leads_updated_at
 ALTER TABLE negocios_leads ENABLE ROW LEVEL SECURITY;
 
 -- Política: permitir lectura pública (solo para la API)
+DROP POLICY IF EXISTS "Permitir lectura pública de negocios_leads" ON negocios_leads;
 CREATE POLICY "Permitir lectura pública de negocios_leads"
   ON negocios_leads
   FOR SELECT
   USING (true);
 
 -- Política: permitir inserción pública (para el formulario)
+DROP POLICY IF EXISTS "Permitir inserción pública de negocios_leads" ON negocios_leads;
 CREATE POLICY "Permitir inserción pública de negocios_leads"
   ON negocios_leads
   FOR INSERT
