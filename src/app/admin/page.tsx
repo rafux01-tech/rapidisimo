@@ -283,7 +283,7 @@ export default function AdminPage() {
                   {negociosLeads.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={8}
+                        colSpan={9}
                         className="px-4 py-8 text-center text-stone-500"
                       >
                         {cargandoLeads
@@ -300,6 +300,10 @@ export default function AdminPage() {
                               (1000 * 60 * 60),
                           )
                         : 0;
+                      
+                      // Verificar estado (puede venir como string o en minúsculas)
+                      const estadoActual = (n.estado || "").toLowerCase();
+                      const estaActivado = estadoActual === "activado";
 
                     return (
                       <tr
@@ -307,7 +311,7 @@ export default function AdminPage() {
                         className="border-t border-stone-100 hover:bg-stone-50/80"
                       >
                         <td className="px-4 py-2 font-mono text-xs text-stone-700">
-                          {n.id}
+                          {n.id.substring(0, 8)}...
                         </td>
                         <td className="px-4 py-2 text-stone-800">
                           {n.nombreNegocio}
@@ -329,16 +333,16 @@ export default function AdminPage() {
                           {creadoHaceHoras} h
                         </td>
                         <td className="px-4 py-2">
-                          {n.estado !== "activado" ? (
+                          {!estaActivado ? (
                             <button
                               onClick={() => handleActivar(n.id)}
                               disabled={activandoId === n.id}
-                              className="text-xs bg-primary text-white px-3 py-1.5 rounded-lg font-medium hover:bg-primary/90 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                              className="text-xs bg-primary text-white px-3 py-1.5 rounded-lg font-medium hover:bg-primary/90 disabled:opacity-60 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
                             >
                               {activandoId === n.id ? "Activando..." : "Activar"}
                             </button>
                           ) : (
-                            <span className="text-xs text-emerald-600 font-medium">
+                            <span className="text-xs text-emerald-600 font-medium whitespace-nowrap">
                               ✓ Activado
                             </span>
                           )}
