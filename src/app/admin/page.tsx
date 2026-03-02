@@ -44,6 +44,8 @@ export default function AdminPage() {
   const [autenticado, setAutenticado] = useState<boolean | null>(null);
   const [negociosLeads, setNegociosLeads] = useState<NegocioLeadStored[]>([]);
   const [cargandoLeads, setCargandoLeads] = useState(true);
+  const [activandoId, setActivandoId] = useState<string | null>(null);
+  const [mensaje, setMensaje] = useState<{ tipo: "exito" | "error"; texto: string } | null>(null);
 
   // Verificar autenticación
   useEffect(() => {
@@ -96,6 +98,59 @@ export default function AdminPage() {
     await fetch("/api/admin/logout", { method: "POST" });
     router.push("/admin/login");
     router.refresh();
+  }
+
+  async function recargarLeads() {
+    try {
+      const res = await fetch("/api/negocios");
+      if (res.ok) {
+        const data = (await res.json()) as NegocioLeadStored[];
+        setNegociosLeads(data);
+      }
+    } catch (err) {
+      console.error("Error recargando leads:", err);
+    }
+  }
+
+  async function handleActivar(leadId: string) {
+    if (!confirm("¿Activar este negocio? Se creará un negocio activo y podrá agregar productos.")) {
+      return;
+    }
+
+    setActivandoId(leadId);
+    setMensaje(null);
+
+    try {
+      const res = await fetch("/api/negocios/activar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ leadId }),
+      });
+
+      if (res.ok) {
+        setMensaje({
+          tipo: "exito",
+          texto: "Negocio activado exitosamente. Ya puede agregar productos.",
+        });
+        // Recargar leads para actualizar el estado
+        await recargarLeads();
+        // Limpiar mensaje después de 5 segundos
+        setTimeout(() => setMensaje(null), 5000);
+      } else {
+        const data = await res.json();
+        setMensaje({
+          tipo: "error",
+          texto: data.error || "Error al activar el negocio",
+        });
+      }
+    } catch (err) {
+      setMensaje({
+        tipo: "error",
+        texto: "Error de conexión. Intenta de nuevo.",
+      });
+    } finally {
+      setActivandoId(null);
+    }
   }
 
   // Mostrar loading mientras verifica autenticación
@@ -191,6 +246,18 @@ export default function AdminPage() {
             </div>
           </section>
 
+          {mensaje && (
+            <div
+              className={`rounded-xl border p-4 ${
+                mensaje.tipo === "exito"
+                  ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+                  : "bg-red-50 border-red-200 text-red-800"
+              }`}
+            >
+              <p className="text-sm font-medium">{mensaje.texto}</p>
+            </div>
+          )}
+
           <section className="space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold text-stone-900">
@@ -209,6 +276,7 @@ export default function AdminPage() {
                     <th className="px-4 py-2">Tipo</th>
                     <th className="px-4 py-2">Estado</th>
                     <th className="px-4 py-2">Hace</th>
+                    <th className="px-4 py-2">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -259,6 +327,21 @@ export default function AdminPage() {
                         </td>
                         <td className="px-4 py-2 text-stone-500 text-xs">
                           {creadoHaceHoras} h
+                        </td>
+                        <td className="px-4 py-2">
+                          {n.estado !== "activado" ? (
+                            <button
+                              onClick={() => handleActivar(n.id)}
+                              disabled={activandoId === n.id}
+                              className="text-xs bg-primary text-white px-3 py-1.5 rounded-lg font-medium hover:bg-primary/90 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                            >
+                              {activandoId === n.id ? "Activando..." : "Activar"}
+                            </button>
+                          ) : (
+                            <span className="text-xs text-emerald-600 font-medium">
+                              ✓ Activado
+                            </span>
+                          )}
                         </td>
                       </tr>
                     );
