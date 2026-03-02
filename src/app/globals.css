@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #006847;
+  --primary-dark: #004d35;
+  --primary-light: #008f5a;
+  --accent: #f7931e;
+  --safe: #22c55e;
+  --trust: #0ea5e9;
+}
+
+body {
+  @apply bg-stone-50 text-stone-900 antialiased;
+}
+
+/* Botones principales */
+.btn-primary {
+  @apply bg-primary hover:bg-primary-dark text-white font-semibold py-3 px-6 rounded-xl transition-colors shadow-md;
+}
+
+.btn-secondary {
+  @apply bg-white border-2 border-primary text-primary hover:bg-primary/5 font-semibold py-3 px-6 rounded-xl transition-colors;
+}
+
+/* Cards de confianza */
+.card-trust {
+  @apply bg-white rounded-2xl shadow-lg border border-stone-200 p-6;
+}
+
+/* Badge seguridad */
+.badge-safe {
+  @apply inline-flex items-center gap-1.5 rounded-full bg-safe/15 text-green-800 px-3 py-1 text-sm font-medium;
+}
+
+.badge-trust {
+  @apply inline-flex items-center gap-1.5 rounded-full bg-trust/15 text-sky-800 px-3 py-1 text-sm font-medium;
+}
