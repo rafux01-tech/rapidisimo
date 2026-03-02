@@ -208,37 +208,49 @@ export default function AdminPage() {
                   {(negociosLeads.length > 0
                     ? negociosLeads
                     : negociosLeadsAdminMock
-                  ).map((n) => (
-                    <tr
-                      key={n.id}
-                      className="border-t border-stone-100 hover:bg-stone-50/80"
-                    >
-                      <td className="px-4 py-2 font-mono text-xs text-stone-700">
-                        {n.id}
-                      </td>
-                      <td className="px-4 py-2 text-stone-800">
-                        {n.nombreNegocio}
-                      </td>
-                      <td className="px-4 py-2 text-stone-800">
-                        {n.contactoNombre}
-                      </td>
-                      <td className="px-4 py-2 text-stone-700">
-                        {n.contactoTelefono}
-                      </td>
-                      <td className="px-4 py-2 text-stone-700">
-                        {n.sector}
-                      </td>
-                      <td className="px-4 py-2 text-stone-700">
-                        {n.tipoNegocio}
-                      </td>
-                      <td className="px-4 py-2 text-stone-700">
-                        {getEstadoLeadLabel(n.estado)}
-                      </td>
-                      <td className="px-4 py-2 text-stone-500 text-xs">
-                        {n.creadoHaceHoras} h
-                      </td>
-                    </tr>
-                  ))}
+                  ).map((n) => {
+                    // Manejar ambos tipos: NegocioLeadStored (API) y NegocioLeadAdmin (mock)
+                    const sector = "sector" in n ? n.sector : n.direccion || "N/A";
+                    const creadoHaceHoras =
+                      "creadoHaceHoras" in n
+                        ? n.creadoHaceHoras
+                        : n.creadoEn
+                          ? Math.floor(
+                              (Date.now() - new Date(n.creadoEn).getTime()) /
+                                (1000 * 60 * 60),
+                            )
+                          : 0;
+
+                    return (
+                      <tr
+                        key={n.id}
+                        className="border-t border-stone-100 hover:bg-stone-50/80"
+                      >
+                        <td className="px-4 py-2 font-mono text-xs text-stone-700">
+                          {n.id}
+                        </td>
+                        <td className="px-4 py-2 text-stone-800">
+                          {n.nombreNegocio}
+                        </td>
+                        <td className="px-4 py-2 text-stone-800">
+                          {n.contactoNombre}
+                        </td>
+                        <td className="px-4 py-2 text-stone-700">
+                          {n.contactoTelefono}
+                        </td>
+                        <td className="px-4 py-2 text-stone-700">{sector}</td>
+                        <td className="px-4 py-2 text-stone-700">
+                          {n.tipoNegocio}
+                        </td>
+                        <td className="px-4 py-2 text-stone-700">
+                          {getEstadoLeadLabel(n.estado)}
+                        </td>
+                        <td className="px-4 py-2 text-stone-500 text-xs">
+                          {creadoHaceHoras} h
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
