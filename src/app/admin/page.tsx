@@ -49,22 +49,57 @@ export default function AdminPage() {
 
   // Verificar autenticación
   useEffect(() => {
+    let cancelado = false;
+
     async function verificarAuth() {
       try {
-        const res = await fetch("/api/admin/check");
+        const res = await fetch("/api/admin/check", {
+          cache: "no-store",
+        });
+        
+        if (cancelado) return;
+
+        if (!res.ok) {
+          if (!cancelado) {
+            setAutenticado(false);
+            router.push("/admin/login");
+          }
+          return;
+        }
+
         const data = await res.json();
+        if (cancelado) return;
+
         if (data.authenticated) {
           setAutenticado(true);
         } else {
           setAutenticado(false);
           router.push("/admin/login");
         }
-      } catch {
+      } catch (err) {
+        console.error("Error verificando autenticación:", err);
+        if (!cancelado) {
+          setAutenticado(false);
+          router.push("/admin/login");
+        }
+      }
+    }
+
+    verificarAuth();
+
+    // Timeout de seguridad: si después de 5 segundos no responde, redirigir
+    const timeout = setTimeout(() => {
+      if (!cancelado) {
+        console.warn("Timeout verificando autenticación, redirigiendo a login");
         setAutenticado(false);
         router.push("/admin/login");
       }
-    }
-    verificarAuth();
+    }, 5000);
+
+    return () => {
+      cancelado = true;
+      clearTimeout(timeout);
+    };
   }, [router]);
 
   useEffect(() => {
