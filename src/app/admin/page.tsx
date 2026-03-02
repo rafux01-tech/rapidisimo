@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
 import { useLocale } from "@/lib/locale-context";
 import {
@@ -41,11 +42,35 @@ function getEstadoLeadLabel(estado: string) {
 
 export default function AdminPage() {
   const { t } = useLocale();
+  const router = useRouter();
 
+  const [autenticado, setAutenticado] = useState<boolean | null>(null);
   const [negociosLeads, setNegociosLeads] = useState<NegocioLeadStored[]>([]);
   const [cargandoLeads, setCargandoLeads] = useState(true);
 
+  // Verificar autenticación
   useEffect(() => {
+    async function verificarAuth() {
+      try {
+        const res = await fetch("/api/admin/check");
+        const data = await res.json();
+        if (data.authenticated) {
+          setAutenticado(true);
+        } else {
+          setAutenticado(false);
+          router.push("/admin/login");
+        }
+      } catch {
+        setAutenticado(false);
+        router.push("/admin/login");
+      }
+    }
+    verificarAuth();
+  }, [router]);
+
+  useEffect(() => {
+    if (!autenticado) return;
+
     let cancelado = false;
 
     async function cargar() {
@@ -68,7 +93,27 @@ export default function AdminPage() {
     return () => {
       cancelado = true;
     };
-  }, []);
+  }, [autenticado]);
+
+  async function handleLogout() {
+    await fetch("/api/admin/logout", { method: "POST" });
+    router.push("/admin/login");
+    router.refresh();
+  }
+
+  // Mostrar loading mientras verifica autenticación
+  if (autenticado === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-stone-600">Verificando acceso...</p>
+      </div>
+    );
+  }
+
+  // Si no está autenticado, el useEffect ya redirige
+  if (!autenticado) {
+    return null;
+  }
 
   const pedidosHoy = pedidosAdminMock.length;
   const montoHoy = pedidosAdminMock.reduce((acc, p) => acc + p.total, 0);
@@ -82,16 +127,26 @@ export default function AdminPage() {
       <main className="flex-1 px-4 py-6">
         <div className="max-w-6xl mx-auto space-y-8">
           <header className="space-y-1">
-            <p className="text-xs uppercase tracking-wide text-stone-500">
-              Panel interno
-            </p>
-            <h1 className="text-2xl md:text-3xl font-bold text-stone-900">
-              {t.appName} Admin
-            </h1>
-            <p className="text-sm text-stone-600 max-w-2xl">
-              Vista rápida para que como dueño veas qué está pasando: pedidos
-              del día, dinero movido y negocios interesados en conectarse.
-            </p>
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-wide text-stone-500">
+                  Panel interno
+                </p>
+                <h1 className="text-2xl md:text-3xl font-bold text-stone-900">
+                  {t.appName} Admin
+                </h1>
+                <p className="text-sm text-stone-600 max-w-2xl">
+                  Vista rápida para que como dueño veas qué está pasando: pedidos
+                  del día, dinero movido y negocios interesados en conectarse.
+                </p>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="text-sm text-stone-600 hover:text-stone-900 px-3 py-1.5 rounded-lg hover:bg-stone-100 transition-colors"
+              >
+                Cerrar sesión
+              </button>
+            </div>
           </header>
 
           <section className="grid md:grid-cols-3 gap-4">
