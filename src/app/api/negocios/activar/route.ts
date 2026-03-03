@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabaseClient } from "@/lib/supabase";
 import { cookies } from "next/headers";
+import bcrypt from "bcrypt";
 
 const tieneSupabase =
   !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
@@ -70,6 +71,10 @@ export async function POST(request: Request) {
       );
     }
 
+    // Hashear la contraseña antes de guardarla
+    const saltRounds = 10;
+    const passwordHash = await bcrypt.hash(password, saltRounds);
+
     // Crear el negocio activo
     const { data: negocio, error: negocioError } = await supabase
       .from("negocios")
@@ -82,7 +87,7 @@ export async function POST(request: Request) {
         tipo_negocio: lead.tipo_negocio,
         horario: lead.horario || null,
         email: email,
-        password_hash: password, // Por ahora guardamos la contraseña directamente (en producción usar hash)
+        password_hash: passwordHash, // Contraseña hasheada con bcrypt
         activo: true,
       })
       .select()

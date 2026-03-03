@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getSupabaseClient } from "@/lib/supabase";
+import bcrypt from "bcrypt";
 
 const tieneSupabase =
   !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
@@ -41,9 +42,18 @@ export async function POST(request: Request) {
       );
     }
 
-    // Verificar contraseña (simple comparación por ahora)
-    // En producción, usa bcrypt.compare() o similar
-    if (negocio.password_hash !== password) {
+    // Verificar contraseña usando bcrypt
+    // Soporta tanto contraseñas hasheadas (nuevas) como sin hashear (legacy)
+    let passwordValid = false;
+    if (negocio.password_hash.startsWith("$2b$") || negocio.password_hash.startsWith("$2a$")) {
+      // Contraseña hasheada con bcrypt
+      passwordValid = await bcrypt.compare(password, negocio.password_hash);
+    } else {
+      // Contraseña legacy sin hashear (para migración gradual)
+      passwordValid = negocio.password_hash === password;
+    }
+
+    if (!passwordValid) {
       return NextResponse.json(
         { error: "Credenciales incorrectas" },
         { status: 401 },

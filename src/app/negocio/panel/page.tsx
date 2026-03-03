@@ -37,6 +37,13 @@ export default function NegocioPanelPage() {
   const [formDisponible, setFormDisponible] = useState(true);
   const [enviando, setEnviando] = useState(false);
 
+  // Cambiar contraseña
+  const [mostrarCambiarPassword, setMostrarCambiarPassword] = useState(false);
+  const [passwordActual, setPasswordActual] = useState("");
+  const [passwordNueva, setPasswordNueva] = useState("");
+  const [passwordNuevaConfirmar, setPasswordNuevaConfirmar] = useState("");
+  const [cambiandoPassword, setCambiandoPassword] = useState(false);
+
   // Verificar autenticación
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -199,6 +206,67 @@ export default function NegocioPanelPage() {
     }
   }
 
+  async function handleCambiarPassword(e: React.FormEvent) {
+    e.preventDefault();
+    if (!negocioId) return;
+
+    if (passwordNueva !== passwordNuevaConfirmar) {
+      setMensaje({
+        tipo: "error",
+        texto: "Las contraseñas nuevas no coinciden",
+      });
+      return;
+    }
+
+    if (passwordNueva.length < 6) {
+      setMensaje({
+        tipo: "error",
+        texto: "La nueva contraseña debe tener al menos 6 caracteres",
+      });
+      return;
+    }
+
+    setCambiandoPassword(true);
+    setMensaje(null);
+
+    try {
+      const res = await fetch("/api/negocios/auth/cambiar-password", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          negocioId,
+          passwordActual,
+          passwordNueva,
+        }),
+      });
+
+      if (res.ok) {
+        setMensaje({
+          tipo: "exito",
+          texto: "Contraseña actualizada exitosamente",
+        });
+        setMostrarCambiarPassword(false);
+        setPasswordActual("");
+        setPasswordNueva("");
+        setPasswordNuevaConfirmar("");
+        setTimeout(() => setMensaje(null), 5000);
+      } else {
+        const data = await res.json();
+        setMensaje({
+          tipo: "error",
+          texto: data.error || "Error al cambiar contraseña",
+        });
+      }
+    } catch (err) {
+      setMensaje({
+        tipo: "error",
+        texto: "Error de conexión. Intenta de nuevo.",
+      });
+    } finally {
+      setCambiandoPassword(false);
+    }
+  }
+
   async function handleLogout() {
     if (negocioId) {
       await fetch("/api/negocios/auth/logout", {
@@ -274,6 +342,76 @@ export default function NegocioPanelPage() {
               <p className="text-sm font-medium">{mensaje.texto}</p>
             </div>
           )}
+
+          <section className="space-y-4">
+            <div className="bg-white rounded-2xl border border-stone-200 p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-semibold text-stone-900">Configuración de cuenta</h3>
+                  <p className="text-sm text-stone-600">Gestiona tu contraseña y preferencias</p>
+                </div>
+                <button
+                  onClick={() => setMostrarCambiarPassword(!mostrarCambiarPassword)}
+                  className="text-sm text-primary hover:text-primary/80 font-medium"
+                >
+                  {mostrarCambiarPassword ? "Ocultar" : "Cambiar contraseña"}
+                </button>
+              </div>
+
+              {mostrarCambiarPassword && (
+                <form onSubmit={handleCambiarPassword} className="mt-4 space-y-4 pt-4 border-t border-stone-200">
+                  <div>
+                    <label className="block text-sm font-medium text-stone-700 mb-1">
+                      Contraseña actual *
+                    </label>
+                    <input
+                      type="password"
+                      value={passwordActual}
+                      onChange={(e) => setPasswordActual(e.target.value)}
+                      required
+                      className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
+                      placeholder="••••••••"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-stone-700 mb-1">
+                      Nueva contraseña *
+                    </label>
+                    <input
+                      type="password"
+                      value={passwordNueva}
+                      onChange={(e) => setPasswordNueva(e.target.value)}
+                      required
+                      minLength={6}
+                      className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
+                      placeholder="Mínimo 6 caracteres"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-stone-700 mb-1">
+                      Confirmar nueva contraseña *
+                    </label>
+                    <input
+                      type="password"
+                      value={passwordNuevaConfirmar}
+                      onChange={(e) => setPasswordNuevaConfirmar(e.target.value)}
+                      required
+                      minLength={6}
+                      className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
+                      placeholder="Repite la nueva contraseña"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={cambiandoPassword}
+                    className="bg-primary text-white px-4 py-2 rounded-lg font-medium text-sm hover:bg-primary/90 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {cambiandoPassword ? "Actualizando..." : "Actualizar contraseña"}
+                  </button>
+                </form>
+              )}
+            </div>
+          </section>
 
           <section className="space-y-4">
             <div className="flex items-center justify-between">
