@@ -93,23 +93,20 @@ Una vez que un negocio inicia sesión, puede:
 
 ## Seguridad
 
-**Nota importante**: Actualmente, las contraseñas se guardan directamente en la base de datos. Esto es **solo para desarrollo**. 
+✅ **Implementado**: Las contraseñas ahora se hashean con `bcrypt` antes de guardarse en la base de datos.
 
-Para producción, deberías:
-1. Usar una librería de hashing como `bcrypt` o `argon2`
-2. Hashear la contraseña antes de guardarla
-3. Comparar hashes al verificar login
+### Características de seguridad:
+- **Hashing con bcrypt**: Todas las contraseñas se hashean con 10 salt rounds antes de guardarse
+- **Comparación segura**: El login compara hashes usando `bcrypt.compare()`
+- **Migración gradual**: El sistema soporta contraseñas legacy sin hashear (para negocios activados antes de esta actualización)
+- **Cambio de contraseña**: Los negocios pueden cambiar su contraseña desde el panel, requiriendo la contraseña actual
 
-Ejemplo con bcrypt (para implementar después):
-```typescript
-import bcrypt from 'bcrypt';
-
-// Al crear/actualizar contraseña
-const passwordHash = await bcrypt.hash(password, 10);
-
-// Al verificar login
-const isValid = await bcrypt.compare(password, negocio.password_hash);
-```
+### Cambiar contraseña:
+1. Inicia sesión en `/negocio/panel`
+2. En la sección "Configuración de cuenta", haz clic en "Cambiar contraseña"
+3. Ingresa tu contraseña actual y la nueva contraseña (mínimo 6 caracteres)
+4. Confirma la nueva contraseña
+5. Haz clic en "Actualizar contraseña"
 
 ## Flujo Completo
 
