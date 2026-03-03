@@ -35,6 +35,10 @@ export default function NegocioPanelPage() {
   const [formCategoria, setFormCategoria] = useState("");
   const [formDescripcion, setFormDescripcion] = useState("");
   const [formDisponible, setFormDisponible] = useState(true);
+  const [formImagen, setFormImagen] = useState<File | null>(null);
+  const [formImagenPreview, setFormImagenPreview] = useState<string | null>(null);
+  const [formImagenUrl, setFormImagenUrl] = useState<string | null>(null);
+  const [subiendoImagen, setSubiendoImagen] = useState(false);
   const [enviando, setEnviando] = useState(false);
 
   // Cambiar contraseña
@@ -108,6 +112,17 @@ export default function NegocioPanelPage() {
     setMensaje(null);
 
     try {
+      // Subir imagen si hay una nueva
+      let imagenUrlFinal = formImagenUrl;
+      if (formImagen) {
+        const urlSubida = await subirImagen();
+        if (!urlSubida) {
+          setEnviando(false);
+          return; // Error ya mostrado en subirImagen
+        }
+        imagenUrlFinal = urlSubida;
+      }
+
       const url = editandoProducto
         ? `/api/negocios/productos/${editandoProducto.id}`
         : "/api/negocios/productos";
@@ -123,6 +138,7 @@ export default function NegocioPanelPage() {
           categoria: formCategoria,
           descripcion: formDescripcion || null,
           disponible: formDisponible,
+          imagen_url: imagenUrlFinal || null,
         }),
       });
 
@@ -166,6 +182,77 @@ export default function NegocioPanelPage() {
     setFormCategoria("");
     setFormDescripcion("");
     setFormDisponible(true);
+    setFormImagen(null);
+    setFormImagenPreview(null);
+    setFormImagenUrl(null);
+  }
+
+  function handleImagenChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validar tipo
+    const tiposPermitidos = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+    if (!tiposPermitidos.includes(file.type)) {
+      setMensaje({
+        tipo: "error",
+        texto: "Tipo de archivo no permitido. Solo JPG, PNG y WEBP.",
+      });
+      return;
+    }
+
+    // Validar tamaño (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setMensaje({
+        tipo: "error",
+        texto: "El archivo es demasiado grande. Máximo 5MB.",
+      });
+      return;
+    }
+
+    setFormImagen(file);
+    // Crear preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setFormImagenPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async function subirImagen(): Promise<string | null> {
+    if (!formImagen || !negocioId) return formImagenUrl;
+
+    setSubiendoImagen(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", formImagen);
+      formData.append("negocioId", negocioId);
+
+      const res = await fetch("/api/negocios/productos/upload-image", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        return data.url;
+      } else {
+        const data = await res.json();
+        setMensaje({
+          tipo: "error",
+          texto: data.error || "Error al subir la imagen",
+        });
+        return null;
+      }
+    } catch (err) {
+      setMensaje({
+        tipo: "error",
+        texto: "Error de conexión al subir imagen",
+      });
+      return null;
+    } finally {
+      setSubiendoImagen(false);
+    }
   }
 
   function iniciarEdicion(producto: ProductoNegocio) {
@@ -175,6 +262,9 @@ export default function NegocioPanelPage() {
     setFormCategoria(producto.categoria);
     setFormDescripcion(producto.descripcion || "");
     setFormDisponible(producto.disponible);
+    setFormImagenUrl(producto.imagen_url || null);
+    setFormImagenPreview(producto.imagen_url || null);
+    setFormImagen(null);
     setMostrarFormulario(true);
   }
 
@@ -499,6 +589,42 @@ export default function NegocioPanelPage() {
                       placeholder="Describe tu producto..."
                     />
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium text-stone-700 mb-1">
+                      Imagen del producto (opcional)
+                    </label>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/jpg,image/png,image/webp"
+                      onChange={handleImagenChange}
+                      className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-stone-100 file:text-stone-700 hover:file:bg-stone-200"
+                    />
+                    <p className="text-xs text-stone-500 mt-1">
+                      Formatos: JPG, PNG, WEBP. Máximo 5MB.
+                    </p>
+                    {(formImagenPreview || formImagenUrl) && (
+                      <div className="mt-3">
+                        <p className="text-xs text-stone-600 mb-2">Vista previa:</p>
+                        <img
+                          src={formImagenPreview || formImagenUrl || ""}
+                          alt="Vista previa"
+                          className="w-32 h-32 object-cover rounded-lg border border-stone-200"
+                        />
+                        {formImagen && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFormImagen(null);
+                              setFormImagenPreview(formImagenUrl);
+                            }}
+                            className="mt-2 text-xs text-red-600 hover:text-red-700"
+                          >
+                            Quitar imagen nueva
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
                   <div className="flex items-center gap-2">
                     <input
                       type="checkbox"
@@ -514,14 +640,16 @@ export default function NegocioPanelPage() {
                   <div className="flex gap-2">
                     <button
                       type="submit"
-                      disabled={enviando}
+                      disabled={enviando || subiendoImagen}
                       className="bg-primary text-white px-4 py-2 rounded-lg font-medium text-sm hover:bg-primary/90 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
                     >
-                      {enviando
-                        ? "Guardando..."
-                        : editandoProducto
-                          ? "Actualizar"
-                          : "Agregar Producto"}
+                      {subiendoImagen
+                        ? "Subiendo imagen..."
+                        : enviando
+                          ? "Guardando..."
+                          : editandoProducto
+                            ? "Actualizar"
+                            : "Agregar Producto"}
                     </button>
                     {editandoProducto && (
                       <button

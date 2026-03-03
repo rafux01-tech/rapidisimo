@@ -120,8 +120,9 @@ Una vez que un negocio inicia sesión, puede:
 
 ## Próximos Pasos
 
-- [ ] Implementar hashing de contraseñas
-- [ ] Agregar funcionalidad para que negocios cambien su contraseña
+- [x] Implementar hashing de contraseñas ✅
+- [x] Agregar funcionalidad para que negocios cambien su contraseña ✅
 - [ ] Agregar subida de imágenes para productos
 - [ ] Implementar notificaciones cuando hay nuevos pedidos
 - [ ] Agregar vista de pedidos para negocios
+- [ ] Agregar recuperación de contraseña (reset por email)

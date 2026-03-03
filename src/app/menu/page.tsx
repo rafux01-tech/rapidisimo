@@ -148,9 +148,20 @@ export default function MenuPage() {
             {productosFiltrados.map((p) => (
               <li
                 key={p.id}
-                className="bg-white rounded-xl border border-stone-200 p-4 flex items-center justify-between shadow-sm"
+                className="bg-white rounded-xl border border-stone-200 p-4 flex items-center gap-4 shadow-sm"
               >
-                <div className="flex-1">
+                {p.imagen && (
+                  <img
+                    src={p.imagen}
+                    alt={getProductName(p, locale)}
+                    className="w-20 h-20 object-cover rounded-lg flex-shrink-0"
+                    onError={(e) => {
+                      // Ocultar imagen si falla al cargar
+                      (e.target as HTMLImageElement).style.display = "none";
+                    }}
+                  />
+                )}
+                <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-stone-900">
                     {getProductName(p, locale)}
                   </h3>
@@ -165,7 +176,7 @@ export default function MenuPage() {
                 </div>
                 <button
                   onClick={() => addItem(convertirProducto(p))}
-                  className="bg-primary text-white px-4 py-2 rounded-lg font-medium text-sm hover:bg-primary-dark ml-4"
+                  className="bg-primary text-white px-4 py-2 rounded-lg font-medium text-sm hover:bg-primary-dark flex-shrink-0"
                 >
                   {t.menu.agregar}
                 </button>
