@@ -38,6 +38,12 @@ export default function Header() {
           >
             {t.nav.soyNegocio}
           </Link>
+          <Link
+            href="/negocio/login"
+            className="text-stone-600 hover:text-primary font-medium text-sm"
+          >
+            {locale === "es" ? "Acceso Negocio" : "Business Login"}
+          </Link>
           <select
             value={locale}
             onChange={(e) => setLocale(e.target.value as Locale)}

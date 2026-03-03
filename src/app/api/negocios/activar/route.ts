@@ -24,11 +24,18 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { leadId } = body;
+    const { leadId, email, password } = body;
 
     if (!leadId) {
       return NextResponse.json(
         { error: "leadId es requerido" },
+        { status: 400 },
+      );
+    }
+
+    if (!email || !password) {
+      return NextResponse.json(
+        { error: "Email y contraseña son requeridos para activar el negocio" },
         { status: 400 },
       );
     }
@@ -49,6 +56,20 @@ export async function POST(request: Request) {
       );
     }
 
+    // Verificar que el email no esté en uso
+    const { data: emailExistente } = await supabase
+      .from("negocios")
+      .select("id")
+      .eq("email", email)
+      .single();
+
+    if (emailExistente) {
+      return NextResponse.json(
+        { error: "Este email ya está en uso por otro negocio" },
+        { status: 400 },
+      );
+    }
+
     // Crear el negocio activo
     const { data: negocio, error: negocioError } = await supabase
       .from("negocios")
@@ -60,6 +81,8 @@ export async function POST(request: Request) {
         sector: lead.direccion.split(",")[0] || null, // Extraer sector de dirección
         tipo_negocio: lead.tipo_negocio,
         horario: lead.horario || null,
+        email: email,
+        password_hash: password, // Por ahora guardamos la contraseña directamente (en producción usar hash)
         activo: true,
       })
       .select()

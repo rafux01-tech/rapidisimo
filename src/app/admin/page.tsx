@@ -45,6 +45,10 @@ export default function AdminPage() {
   const [negociosLeads, setNegociosLeads] = useState<NegocioLeadStored[]>([]);
   const [cargandoLeads, setCargandoLeads] = useState(true);
   const [activandoId, setActivandoId] = useState<string | null>(null);
+  const [mostrarFormularioActivacion, setMostrarFormularioActivacion] = useState(false);
+  const [leadSeleccionado, setLeadSeleccionado] = useState<NegocioLeadStored | null>(null);
+  const [formEmail, setFormEmail] = useState("");
+  const [formPassword, setFormPassword] = useState("");
   const [mensaje, setMensaje] = useState<{ tipo: "exito" | "error"; texto: string } | null>(null);
 
   // Verificar autenticación
@@ -147,30 +151,57 @@ export default function AdminPage() {
     }
   }
 
-  async function handleActivar(leadId: string) {
-    if (!confirm("¿Activar este negocio? Se creará un negocio activo y podrá agregar productos.")) {
+  function iniciarActivacion(lead: NegocioLeadStored) {
+    setLeadSeleccionado(lead);
+    setFormEmail("");
+    setFormPassword("");
+    setMostrarFormularioActivacion(true);
+    setMensaje(null);
+  }
+
+  function cancelarActivacion() {
+    setMostrarFormularioActivacion(false);
+    setLeadSeleccionado(null);
+    setFormEmail("");
+    setFormPassword("");
+  }
+
+  async function confirmarActivacion() {
+    if (!leadSeleccionado) return;
+
+    if (!formEmail || !formPassword) {
+      setMensaje({
+        tipo: "error",
+        texto: "Email y contraseña son requeridos",
+      });
       return;
     }
 
-    setActivandoId(leadId);
+    setActivandoId(leadSeleccionado.id);
     setMensaje(null);
 
     try {
       const res = await fetch("/api/negocios/activar", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ leadId }),
+        body: JSON.stringify({
+          leadId: leadSeleccionado.id,
+          email: formEmail,
+          password: formPassword,
+        }),
       });
 
       if (res.ok) {
         setMensaje({
           tipo: "exito",
-          texto: "Negocio activado exitosamente. Ya puede agregar productos.",
+          texto: `Negocio activado exitosamente. Email: ${formEmail}. El negocio ya puede iniciar sesión en /negocio/login.`,
         });
         // Recargar leads para actualizar el estado
         await recargarLeads();
-        // Limpiar mensaje después de 5 segundos
-        setTimeout(() => setMensaje(null), 5000);
+        // Cerrar formulario
+        cancelarActivacion();
+        // Limpiar mensaje después de 8 segundos
+        setTimeout(() => setMensaje(null), 8000);
       } else {
         const data = await res.json();
         setMensaje({
@@ -293,6 +324,71 @@ export default function AdminPage() {
             </div>
           )}
 
+          {mostrarFormularioActivacion && leadSeleccionado && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-2xl border border-stone-200 p-6 max-w-md w-full space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-stone-900 mb-1">
+                    Activar Negocio
+                  </h3>
+                  <p className="text-sm text-stone-600">
+                    Configura las credenciales de acceso para{" "}
+                    <strong>{leadSeleccionado.nombreNegocio}</strong>
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-stone-700 mb-1">
+                    Email *
+                  </label>
+                  <input
+                    type="email"
+                    value={formEmail}
+                    onChange={(e) => setFormEmail(e.target.value)}
+                    required
+                    className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
+                    placeholder="negocio@ejemplo.com"
+                    autoComplete="email"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-stone-700 mb-1">
+                    Contraseña *
+                  </label>
+                  <input
+                    type="text"
+                    value={formPassword}
+                    onChange={(e) => setFormPassword(e.target.value)}
+                    required
+                    className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
+                    placeholder="Contraseña temporal"
+                  />
+                  <p className="text-xs text-stone-500 mt-1">
+                    El negocio podrá cambiar esta contraseña después de iniciar sesión.
+                  </p>
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <button
+                    onClick={confirmarActivacion}
+                    disabled={activandoId === leadSeleccionado.id || !formEmail || !formPassword}
+                    className="flex-1 bg-primary text-white px-4 py-2 rounded-lg font-medium text-sm hover:bg-primary/90 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {activandoId === leadSeleccionado.id ? "Activando..." : "Activar Negocio"}
+                  </button>
+                  <button
+                    onClick={cancelarActivacion}
+                    disabled={activandoId === leadSeleccionado.id}
+                    className="bg-stone-200 text-stone-700 px-4 py-2 rounded-lg font-medium text-sm hover:bg-stone-300 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           <section className="space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold text-stone-900">
@@ -370,7 +466,7 @@ export default function AdminPage() {
                         <td className="px-4 py-2">
                           {!estaActivado ? (
                             <button
-                              onClick={() => handleActivar(n.id)}
+                              onClick={() => iniciarActivacion(n)}
                               disabled={activandoId === n.id}
                               className="text-xs bg-primary text-white px-3 py-1.5 rounded-lg font-medium hover:bg-primary/90 disabled:opacity-60 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
                             >
