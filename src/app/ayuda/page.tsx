@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import Header from "@/components/Header";
 import GarantiaBanner from "@/components/GarantiaBanner";
 import { useLocale } from "@/lib/locale-context";
@@ -63,6 +64,19 @@ export default function AyudaPage() {
               <dd className="text-stone-600 text-sm mt-1">{t.objeciones.cobranDeMasR}</dd>
             </div>
           </dl>
+        </section>
+
+        <section className="mt-8 pt-6 border-t border-stone-200">
+          <h2 className="font-semibold text-stone-900 mb-4">Información legal</h2>
+          <div className="flex flex-wrap gap-4 text-sm">
+            <Link href="/terminos" className="text-primary hover:underline">
+              Términos y Condiciones
+            </Link>
+            <span className="text-stone-400">•</span>
+            <Link href="/privacidad" className="text-primary hover:underline">
+              Política de Privacidad
+            </Link>
+          </div>
         </section>
       </main>
     </div>

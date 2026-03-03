@@ -95,8 +95,25 @@ export default function HomePage() {
         </section>
 
         {/* Footer mínimo */}
-        <footer className="py-6 px-4 border-t border-stone-200 text-center text-sm text-stone-500">
-          <p>Rapidisimo — Delivery con garantía. República Dominicana.</p>
+        <footer className="py-6 px-4 border-t border-stone-200">
+          <div className="max-w-4xl mx-auto">
+            <p className="text-center text-sm text-stone-500 mb-3">
+              Rapidisimo — Delivery con garantía. República Dominicana.
+            </p>
+            <div className="flex flex-wrap justify-center gap-4 text-xs text-stone-400">
+              <Link href="/terminos" className="hover:text-stone-600 hover:underline">
+                Términos y Condiciones
+              </Link>
+              <span>•</span>
+              <Link href="/privacidad" className="hover:text-stone-600 hover:underline">
+                Política de Privacidad
+              </Link>
+              <span>•</span>
+              <Link href="/ayuda" className="hover:text-stone-600 hover:underline">
+                Ayuda
+              </Link>
+            </div>
+          </div>
         </footer>
       </main>
     </div>
