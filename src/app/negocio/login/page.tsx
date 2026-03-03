@@ -111,11 +111,19 @@ export default function NegocioLoginPage() {
               </button>
             </form>
 
-            <p className="mt-6 text-xs text-stone-500 text-center">
-              ¿No tienes cuenta?{" "}
-              <Link href="/soy-negocio" className="text-primary hover:underline">
-                Regístrate aquí
+            <p className="mt-6 text-xs text-stone-500 text-center space-y-1">
+              <Link
+                href="/negocio/forgot-password"
+                className="block text-primary hover:underline"
+              >
+                ¿Olvidaste tu contraseña?
               </Link>
+              <span className="block">
+                ¿No tienes cuenta?{" "}
+                <Link href="/soy-negocio" className="text-primary hover:underline">
+                  Regístrate aquí
+                </Link>
+              </span>
             </p>
           </div>
         </div>

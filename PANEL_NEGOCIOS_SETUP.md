@@ -125,7 +125,7 @@ Una vez que un negocio inicia sesión, puede:
 - [x] Agregar subida de imágenes para productos ✅
 - [x] Implementar notificaciones cuando hay nuevos pedidos ✅
 - [x] Agregar vista de pedidos para negocios ✅
-- [ ] Agregar recuperación de contraseña (reset por email)
+- [x] Agregar recuperación de contraseña (reset por email) ✅
 
 ## Sistema de Pedidos y Notificaciones
 
@@ -138,6 +138,23 @@ Una vez que un negocio inicia sesión, puede:
 - **Estados de pedidos**: Pendiente → Confirmado → En preparación → Listo → En camino → Entregado
 
 Ver `PEDIDOS_SETUP.md` para más detalles sobre la configuración y uso.
+
+## Recuperación de Contraseña
+
+✅ **Implementado**: Sistema completo de recuperación de contraseña por email.
+
+### Características:
+- **Solicitud de recuperación**: Los negocios pueden solicitar un enlace desde `/negocio/login`
+- **Tokens seguros**: Tokens únicos con expiración de 1 hora
+- **Emails profesionales**: Emails HTML con diseño responsive
+- **Seguridad**: Previene enumeración de emails
+
+### Configuración requerida:
+1. **Crear tabla en Supabase**: Ejecuta `supabase-schema-password-reset.sql`
+2. **Configurar Resend**: Crea cuenta en Resend y agrega `RESEND_API_KEY` en Vercel
+3. **Configurar URL base** (opcional): Agrega `NEXT_PUBLIC_BASE_URL` en Vercel
+
+Ver `PASSWORD_RESET_SETUP.md` para instrucciones detalladas.
 
 ## Subida de Imágenes
 
