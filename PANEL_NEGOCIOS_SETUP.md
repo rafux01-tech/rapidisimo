@@ -122,7 +122,25 @@ Una vez que un negocio inicia sesión, puede:
 
 - [x] Implementar hashing de contraseñas ✅
 - [x] Agregar funcionalidad para que negocios cambien su contraseña ✅
-- [ ] Agregar subida de imágenes para productos
+- [x] Agregar subida de imágenes para productos ✅
 - [ ] Implementar notificaciones cuando hay nuevos pedidos
 - [ ] Agregar vista de pedidos para negocios
 - [ ] Agregar recuperación de contraseña (reset por email)
+
+## Subida de Imágenes
+
+✅ **Implementado**: Los negocios ahora pueden subir imágenes para sus productos.
+
+### Configuración requerida:
+
+1. **Crear bucket en Supabase Storage**:
+   - Ve a Supabase → Storage
+   - Crea un bucket llamado `productos-imagenes` (debe ser público)
+   - Configura las políticas de acceso según `SUPABASE_STORAGE_SETUP.md`
+
+2. **Uso**:
+   - Al agregar o editar un producto, selecciona una imagen
+   - Formatos permitidos: JPG, PNG, WEBP
+   - Tamaño máximo: 5MB
+   - La imagen se sube automáticamente antes de guardar el producto
+   - Las imágenes aparecen en el menú público (`/menu`)
