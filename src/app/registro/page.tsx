@@ -40,10 +40,12 @@ export default function RegistroPage() {
       });
 
       if (res.ok) {
-        // Guardar ID del cliente en localStorage para futuras referencias
+        // Guardar ID del cliente y datos en localStorage para futuras referencias
         const cliente = await res.json();
         if (typeof window !== "undefined") {
           localStorage.setItem("cliente_id", cliente.id);
+          localStorage.setItem("cliente_direccion", direccion || "");
+          localStorage.setItem("cliente_telefono", telefono);
         }
         router.push("/menu");
       } else {

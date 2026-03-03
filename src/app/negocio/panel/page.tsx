@@ -48,6 +48,36 @@ export default function NegocioPanelPage() {
   const [passwordNuevaConfirmar, setPasswordNuevaConfirmar] = useState("");
   const [cambiandoPassword, setCambiandoPassword] = useState(false);
 
+  // Pedidos
+  interface PedidoItem {
+    id: string;
+    nombre_producto: string;
+    precio_unitario: number;
+    cantidad: number;
+    subtotal: number;
+  }
+
+  interface Pedido {
+    id: string;
+    numero_pedido: string;
+    estado: string;
+    metodo_pago: string;
+    subtotal: number;
+    costo_envio: number;
+    total: number;
+    direccion_entrega: string;
+    telefono_cliente?: string;
+    notas?: string;
+    leido_por_negocio: boolean;
+    creado_en: string;
+    pedidos_items: PedidoItem[];
+  }
+
+  const [pedidos, setPedidos] = useState<Pedido[]>([]);
+  const [pedidosNoLeidos, setPedidosNoLeidos] = useState(0);
+  const [cargandoPedidos, setCargandoPedidos] = useState(false);
+  const [mostrarPedidos, setMostrarPedidos] = useState(false);
+
   // Verificar autenticación
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -103,6 +133,106 @@ export default function NegocioPanelPage() {
 
     cargar();
   }, [autenticado, negocioId]);
+
+  // Cargar pedidos y hacer polling para notificaciones
+  useEffect(() => {
+    if (!autenticado || !negocioId) return;
+
+    async function cargarPedidos() {
+      try {
+        const res = await fetch(`/api/negocios/pedidos?negocioId=${negocioId}`);
+        if (res.ok) {
+          const data = await res.json();
+          setPedidos(data);
+          const noLeidos = data.filter((p: Pedido) => !p.leido_por_negocio).length;
+          setPedidosNoLeidos(noLeidos);
+        }
+      } catch (err) {
+        console.error("Error cargando pedidos:", err);
+      } finally {
+        setCargandoPedidos(false);
+      }
+    }
+
+    cargarPedidos();
+    setCargandoPedidos(true);
+
+    // Polling cada 30 segundos para nuevos pedidos
+    const interval = setInterval(cargarPedidos, 30000);
+
+    return () => clearInterval(interval);
+  }, [autenticado, negocioId]);
+
+  async function marcarPedidoLeido(pedidoId: string) {
+    if (!negocioId) return;
+
+    try {
+      const res = await fetch(
+        `/api/negocios/pedidos/${pedidoId}/marcar-leido?negocioId=${negocioId}`,
+        { method: "PUT" },
+      );
+
+      if (res.ok) {
+        setPedidos((prev) =>
+          prev.map((p) =>
+            p.id === pedidoId ? { ...p, leido_por_negocio: true } : p,
+          ),
+        );
+        setPedidosNoLeidos((prev) => Math.max(0, prev - 1));
+      }
+    } catch (err) {
+      console.error("Error marcando pedido como leído:", err);
+    }
+  }
+
+  async function actualizarEstadoPedido(pedidoId: string, nuevoEstado: string) {
+    if (!negocioId) return;
+
+    try {
+      const res = await fetch(
+        `/api/negocios/pedidos/${pedidoId}/actualizar-estado`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ negocioId, estado: nuevoEstado }),
+        },
+      );
+
+      if (res.ok) {
+        setPedidos((prev) =>
+          prev.map((p) => (p.id === pedidoId ? { ...p, estado: nuevoEstado } : p)),
+        );
+        setMensaje({
+          tipo: "exito",
+          texto: "Estado del pedido actualizado",
+        });
+        setTimeout(() => setMensaje(null), 3000);
+      } else {
+        setMensaje({
+          tipo: "error",
+          texto: "Error al actualizar estado",
+        });
+      }
+    } catch (err) {
+      setMensaje({
+        tipo: "error",
+        texto: "Error de conexión",
+      });
+    }
+  }
+
+  function getEstadoLabel(estado: string) {
+    const estados: Record<string, string> = {
+      pendiente: "Pendiente",
+      confirmado: "Confirmado",
+      en_preparacion: "En preparación",
+      listo: "Listo",
+      en_camino: "En camino",
+      entregado: "Entregado",
+      cancelado: "Cancelado",
+    };
+    return estados[estado] || estado;
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -501,6 +631,190 @@ export default function NegocioPanelPage() {
                 </form>
               )}
             </div>
+          </section>
+
+          <section className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <h2 className="text-lg font-semibold text-stone-900">
+                  Pedidos
+                </h2>
+                {pedidosNoLeidos > 0 && (
+                  <span className="bg-red-500 text-white text-xs font-bold px-2.5 py-1 rounded-full">
+                    {pedidosNoLeidos} nuevo{pedidosNoLeidos > 1 ? "s" : ""}
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={() => setMostrarPedidos(!mostrarPedidos)}
+                className="text-sm text-primary hover:text-primary/80 font-medium"
+              >
+                {mostrarPedidos ? "Ocultar" : "Ver pedidos"}
+              </button>
+            </div>
+
+            {mostrarPedidos && (
+              <div className="space-y-4">
+                {cargandoPedidos ? (
+                  <div className="bg-white rounded-2xl border border-stone-200 p-8 text-center">
+                    <p className="text-stone-600">Cargando pedidos...</p>
+                  </div>
+                ) : pedidos.length === 0 ? (
+                  <div className="bg-white rounded-2xl border border-stone-200 p-8 text-center">
+                    <p className="text-stone-600">
+                      Aún no tienes pedidos. Los pedidos aparecerán aquí cuando los clientes hagan pedidos.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {pedidos.map((pedido) => (
+                      <div
+                        key={pedido.id}
+                        className={`bg-white rounded-2xl border p-4 ${
+                          !pedido.leido_por_negocio
+                            ? "border-primary shadow-md"
+                            : "border-stone-200"
+                        }`}
+                        onClick={() => {
+                          if (!pedido.leido_por_negocio) {
+                            marcarPedidoLeido(pedido.id);
+                          }
+                        }}
+                      >
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="font-semibold text-stone-900">
+                                {pedido.numero_pedido}
+                              </h3>
+                              {!pedido.leido_por_negocio && (
+                                <span className="bg-primary text-white text-xs px-2 py-0.5 rounded-full">
+                                  Nuevo
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-stone-500">
+                              {new Date(pedido.creado_en).toLocaleString("es-DO")}
+                            </p>
+                          </div>
+                          <span
+                            className={`text-xs px-2 py-1 rounded-full font-medium ${
+                              pedido.estado === "pendiente"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : pedido.estado === "confirmado" ||
+                                    pedido.estado === "en_preparacion"
+                                ? "bg-blue-100 text-blue-800"
+                                : pedido.estado === "listo" ||
+                                    pedido.estado === "en_camino"
+                                ? "bg-purple-100 text-purple-800"
+                                : pedido.estado === "entregado"
+                                ? "bg-emerald-100 text-emerald-800"
+                                : "bg-red-100 text-red-800"
+                            }`}
+                          >
+                            {getEstadoLabel(pedido.estado)}
+                          </span>
+                        </div>
+
+                        <div className="space-y-2 mb-3">
+                          {pedido.pedidos_items.map((item) => (
+                            <div
+                              key={item.id}
+                              className="flex justify-between text-sm text-stone-700"
+                            >
+                              <span>
+                                {item.nombre_producto} × {item.cantidad}
+                              </span>
+                              <span>RD$ {item.subtotal.toFixed(2)}</span>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="border-t border-stone-200 pt-3 space-y-1 mb-3">
+                          <div className="flex justify-between text-sm text-stone-600">
+                            <span>Subtotal:</span>
+                            <span>RD$ {pedido.subtotal.toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between text-sm text-stone-600">
+                            <span>Envío:</span>
+                            <span>RD$ {pedido.costo_envio.toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between font-semibold text-stone-900 pt-1">
+                            <span>Total:</span>
+                            <span className="text-primary">
+                              RD$ {pedido.total.toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="text-xs text-stone-600 space-y-1 mb-3">
+                          <p>
+                            <strong>Dirección:</strong> {pedido.direccion_entrega}
+                          </p>
+                          {pedido.telefono_cliente && (
+                            <p>
+                              <strong>Teléfono:</strong> {pedido.telefono_cliente}
+                            </p>
+                          )}
+                          {pedido.notas && (
+                            <p>
+                              <strong>Notas:</strong> {pedido.notas}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="flex gap-2">
+                          {pedido.estado === "pendiente" && (
+                            <>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  actualizarEstadoPedido(pedido.id, "confirmado");
+                                }}
+                                className="text-xs bg-primary text-white px-3 py-1.5 rounded-lg font-medium hover:bg-primary/90 transition-colors"
+                              >
+                                Confirmar
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  actualizarEstadoPedido(pedido.id, "cancelado");
+                                }}
+                                className="text-xs bg-red-100 text-red-700 px-3 py-1.5 rounded-lg font-medium hover:bg-red-200 transition-colors"
+                              >
+                                Cancelar
+                              </button>
+                            </>
+                          )}
+                          {pedido.estado === "confirmado" && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                actualizarEstadoPedido(pedido.id, "en_preparacion");
+                              }}
+                              className="text-xs bg-blue-500 text-white px-3 py-1.5 rounded-lg font-medium hover:bg-blue-600 transition-colors"
+                            >
+                              En preparación
+                            </button>
+                          )}
+                          {pedido.estado === "en_preparacion" && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                actualizarEstadoPedido(pedido.id, "listo");
+                              }}
+                              className="text-xs bg-purple-500 text-white px-3 py-1.5 rounded-lg font-medium hover:bg-purple-600 transition-colors"
+                            >
+                              Marcar como listo
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </section>
 
           <section className="space-y-4">

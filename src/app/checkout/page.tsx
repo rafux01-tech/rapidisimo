@@ -16,13 +16,60 @@ export default function CheckoutPage() {
   const { items, subtotal, clearCart } = useCart();
   const router = useRouter();
   const [metodoPago, setMetodoPago] = useState<"efectivo" | "tarjeta">("efectivo");
+  const [enviando, setEnviando] = useState(false);
+  const [error, setError] = useState("");
 
   const total = subtotal + costoEnvio;
 
-  const handleConfirmar = () => {
-    const pedidoId = "PED-" + Date.now();
-    clearCart();
-    router.push(`/pedido/${pedidoId}`);
+  const handleConfirmar = async () => {
+    if (items.length === 0) return;
+
+    setEnviando(true);
+    setError("");
+
+    try {
+      // Obtener datos del cliente desde localStorage
+      const clienteId = typeof window !== "undefined" ? localStorage.getItem("cliente_id") : null;
+      
+      // Obtener dirección del cliente (por ahora usaremos una dirección por defecto o del localStorage)
+      const direccionEntrega = typeof window !== "undefined" 
+        ? localStorage.getItem("cliente_direccion") || "Dirección no especificada"
+        : "Dirección no especificada";
+
+      // Preparar items del pedido
+      const itemsPedido = items.map(({ producto, cantidad }) => ({
+        productoId: producto.id,
+        nombre: locale === "en" && producto.nombreEn ? producto.nombreEn : producto.nombre,
+        precio: producto.precio,
+        cantidad: cantidad,
+      }));
+
+      // Crear el pedido
+      const res = await fetch("/api/pedidos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          clienteId: clienteId || undefined,
+          items: itemsPedido,
+          metodoPago: metodoPago,
+          direccionEntrega: direccionEntrega,
+          telefonoCliente: typeof window !== "undefined" ? localStorage.getItem("cliente_telefono") || undefined : undefined,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        clearCart();
+        router.push(`/pedido/${data.pedido.numeroPedido}`);
+      } else {
+        const data = await res.json();
+        setError(data.error || "Error al crear el pedido. Intenta de nuevo.");
+      }
+    } catch (err) {
+      setError("Error de conexión. Intenta de nuevo.");
+    } finally {
+      setEnviando(false);
+    }
   };
 
   if (items.length === 0) {
@@ -140,11 +187,18 @@ export default function CheckoutPage() {
 
         <GarantiaBanner />
 
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-3 mb-4">
+            <p className="text-sm text-red-800">{error}</p>
+          </div>
+        )}
+
         <button
           onClick={handleConfirmar}
-          className="btn-primary w-full mt-8 py-4 text-lg"
+          disabled={enviando}
+          className="btn-primary w-full mt-8 py-4 text-lg disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          {t.checkout.confirmarPedido}
+          {enviando ? "Creando pedido..." : t.checkout.confirmarPedido}
         </button>
       </main>
     </div>
