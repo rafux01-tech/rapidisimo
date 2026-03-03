@@ -123,9 +123,21 @@ Una vez que un negocio inicia sesión, puede:
 - [x] Implementar hashing de contraseñas ✅
 - [x] Agregar funcionalidad para que negocios cambien su contraseña ✅
 - [x] Agregar subida de imágenes para productos ✅
-- [ ] Implementar notificaciones cuando hay nuevos pedidos
-- [ ] Agregar vista de pedidos para negocios
+- [x] Implementar notificaciones cuando hay nuevos pedidos ✅
+- [x] Agregar vista de pedidos para negocios ✅
 - [ ] Agregar recuperación de contraseña (reset por email)
+
+## Sistema de Pedidos y Notificaciones
+
+✅ **Implementado**: Sistema completo de pedidos con notificaciones en tiempo real.
+
+### Características:
+- **Notificaciones automáticas**: Badge rojo muestra el número de pedidos no leídos
+- **Polling en tiempo real**: Verifica nuevos pedidos cada 30 segundos
+- **Gestión de pedidos**: Ver detalles, marcar como leído, actualizar estado
+- **Estados de pedidos**: Pendiente → Confirmado → En preparación → Listo → En camino → Entregado
+
+Ver `PEDIDOS_SETUP.md` para más detalles sobre la configuración y uso.
 
 ## Subida de Imágenes
 
