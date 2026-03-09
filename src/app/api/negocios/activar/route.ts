@@ -3,6 +3,9 @@ import { getSupabaseClient } from "@/lib/supabase";
 import { cookies } from "next/headers";
 import bcrypt from "bcrypt";
 
+// Forzar renderizado dinámico (usa cookies)
+export const dynamic = 'force-dynamic';
+
 const tieneSupabase =
   !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
   !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;

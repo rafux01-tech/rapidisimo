@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getSupabaseClient } from "@/lib/supabase";
 
+// Forzar renderizado dinámico (usa request.url y cookies)
+export const dynamic = 'force-dynamic';
+
 const tieneSupabase =
   !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
   !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
